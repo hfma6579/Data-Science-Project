@@ -3,10 +3,11 @@ An machine learning exercise with scikit-learn
 """
 import pandas as pd
 import numpy as np
+import sklearn.preprocessing
 import sklearn.linear_model
 import sklearn.model_selection
 
-N = 20  # Num of repetitions in cross validation
+N = 10  # Num of repetitions in cross validation
 
 
 def parse(src):
@@ -18,17 +19,25 @@ def parse(src):
     df.loc[df['Sex'] == 'male', 'Sex'] = 0
     df.loc[df['Sex'] == 'female', 'Sex'] = 1
 
-    # Currectly null values cannot be handled properly
-    df.dropna(inplace=True)
+    df.loc[df['Embarked'] == 'S', 'Embarked'] = 0
+    df.loc[df['Embarked'] == 'C', 'Embarked'] = 1
+    df.loc[df['Embarked'] == 'Q', 'Embarked'] = 2
+
+    # df.dropna(inplace=True)
     return df
+
+
+def fill_missing(X):
+    imputer = sklearn.preprocessing.Imputer(strategy="median")
+    return imputer.fit_transform(X)
 
 
 def create_vec(df):
     """
     Create a feature vectors
     """
-    # only use two features
-    return np.array([df['Sex'], df['Age']]).T
+    # features: Sex, Age, Pclass, SibSp, Parch, Fare, Embarked
+    return np.array([df['Sex'], df['Age'], df['Pclass'], df['SibSp'], df['Parch'], df['Fare'], df['Embarked']]).T
 
 
 def train(df):
@@ -37,8 +46,12 @@ def train(df):
     """
     # using Logistic regression
     model = sklearn.linear_model.LogisticRegression()
+    model = sklearn.
     X = create_vec(df)
     y = np.array(df['Survived'])
+
+    # prepocessing
+    X = fill_missing(X)
 
     # Evaluation
     evaluation = np.mean([train_single_split(X, y, model)
@@ -75,8 +88,9 @@ def train_single_split(X, y, model):
 
 
 def predict(df, model):
-    x = create_vec(df)
-    return model.predict(x)
+    X = create_vec(df)
+    X = fill_missing(X)
+    return model.predict(X)
 
 
 def main():
@@ -84,6 +98,8 @@ def main():
     test_df = parse('input/test.csv')
     model = train(input_df)
     ans = predict(test_df, model)
+    ans_df = test_df[['PassengerId']].assign(Survived=ans)
+    ans_df.to_csv('submission.csv', index=False)
 
 
 if __name__ == '__main__':
