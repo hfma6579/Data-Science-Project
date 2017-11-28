@@ -3,11 +3,15 @@ An machine learning exercise with scikit-learn
 """
 import pandas as pd
 import numpy as np
+import re
 import sklearn.preprocessing
 import sklearn.linear_model
 import sklearn.model_selection
+import sklearn.feature_selection
+import sklearn.tree
 
-N = 10  # Num of repetitions in cross validation
+
+N = 20  # Num of repetitions in cross validation
 
 
 def parse(src):
@@ -19,16 +23,25 @@ def parse(src):
     df.loc[df['Sex'] == 'male', 'Sex'] = 0
     df.loc[df['Sex'] == 'female', 'Sex'] = 1
 
-    df.loc[df['Embarked'] == 'S', 'Embarked'] = 0
-    df.loc[df['Embarked'] == 'C', 'Embarked'] = 1
-    df.loc[df['Embarked'] == 'Q', 'Embarked'] = 2
+    # Pclass and embarked
+    df = df.join(pd.get_dummies(df.Pclass, prefix='Pclass'))
+    df = df.join(pd.get_dummies(df.Embarked, prefix='Embarked'))
 
-    # df.dropna(inplace=True)
+    # cabin
+    cabin = df.Cabin.str.extract('([A-Z])', expand=False)
+    cabin.fillna('U', inplace=True)
+    s = pd.get_dummies(cabin, prefix='Cabin')
+    df = df.join(s)
+
+
     return df
 
 
 def fill_missing(X):
-    imputer = sklearn.preprocessing.Imputer(strategy="median")
+    """
+    Fill in the missing value
+    """
+    imputer = sklearn.preprocessing.Imputer(strategy="most_frequent")
     return imputer.fit_transform(X)
 
 
@@ -37,31 +50,43 @@ def create_vec(df):
     Create a feature vectors
     """
     # features: Sex, Age, Pclass, SibSp, Parch, Fare, Embarked
-    return np.array([df['Sex'], df['Age'], df['Pclass'], df['SibSp'], df['Parch'], df['Fare'], df['Embarked']]).T
+    features = ['Sex', 'Age', 'Pclass_1', 'Pclass_2', 'Pclass_3',
+                'SibSp', 'Parch', 'Embarked_C', 'Embarked_Q', 'Embarked_S',
+                'Fare', 'Cabin_A', 'Cabin_B', 'Cabin_C', 'Cabin_D', 'Cabin_E', 
+                'Cabin_F', 'Cabin_G', 'Cabin_U']
+    return df[features]
 
 
 def train(df):
     """
-    Trainning the model. The 
+    Trainning the model. 
     """
     # using Logistic regression
-    model = sklearn.linear_model.LogisticRegression()
-    model = sklearn.
+    # model = sklearn.linear_model.LogisticRegression()
+
+    # using Decision Tree
+    model = sklearn.tree.DecisionTreeClassifier()
+
     X = create_vec(df)
     y = np.array(df['Survived'])
 
     # prepocessing
-    X = fill_missing(X)
+    X = fill_missing(X) 
+    
+    # get important features
+    selector = sklearn.feature_selection.SelectKBest(sklearn.feature_selection.chi2, 4)
+    selector.fit(X, y)
+    X = selector.transform(X)
 
     # Evaluation
     evaluation = np.mean([train_single_split(X, y, model)
                           for i in range(N)], axis=0)
     print('Evaluation with {:d} repetitions:'.format(N))
-    print('Accuracy: {:f}\nPrecision: {:f}\nRecall: {:f}'.format(*evaluation))
+    print('Accuracy: {:f}'.format(evaluation[0]))
 
     # Using the whole dataset when predicting
     model.fit(X, y)
-    return model
+    return model, selector
 
 
 def train_single_split(X, y, model):
@@ -87,17 +112,18 @@ def train_single_split(X, y, model):
     return accuracy, precision, recall
 
 
-def predict(df, model):
+def predict(df, model, selector):
     X = create_vec(df)
     X = fill_missing(X)
+    X = selector.transform(X)
     return model.predict(X)
 
 
 def main():
     input_df = parse('input/input.csv')
     test_df = parse('input/test.csv')
-    model = train(input_df)
-    ans = predict(test_df, model)
+    model, selector = train(input_df)
+    ans = predict(test_df, model, selector)
     ans_df = test_df[['PassengerId']].assign(Survived=ans)
     ans_df.to_csv('submission.csv', index=False)
 
