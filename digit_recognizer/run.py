@@ -132,7 +132,7 @@ def main(argv):
 
     classifier.train(
         input_fn=train_input_fn,
-        steps=20000,
+        steps=2000,
         hooks=[logging_hook]
     )
 
@@ -143,8 +143,18 @@ def main(argv):
         shuffle=False
     )
 
-    eval_results = mnist_classifier.evaluate(input_fn=eval_input_fn)
+    eval_results = classifier.evaluate(input_fn=eval_input_fn)
     print(eval_results)
+
+    test_data = np.load('data/test_X.npy').astype(np.float32)
+    test_input_fn = tf.estimator.inputs.numpy_input_fn(
+        x={"x": test_data},
+        num_epochs=1,
+        shuffle=False
+    )
+
+    predictions = classifier.predict()
+    print(predictions)
 
 
 if __name__ == '__main__':
