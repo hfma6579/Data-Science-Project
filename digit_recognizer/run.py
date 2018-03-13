@@ -6,15 +6,9 @@ An machine learning exercise with TensorFlow
 import tensorflow as tf
 import numpy as np
 
+from sklearn.model_selection import train_test_split
+
 tf.logging.set_verbosity(tf.logging.INFO)
-
-def parse(src):
-    data = np.load(src)
-    print(data.shape)
-
-
-def train(X, y):
-    raise NotImplementedError
 
 
 def cnn_model_fn(features, labels, mode):
@@ -113,22 +107,14 @@ def cnn_model_fn(features, labels, mode):
     )
 
 
-# def main():
-#     TRAIN = 'data/train.npy'
-#     TEST = 'data/test.npy'
-#     parse(TRAIN)
+def main(argv):
+    # Load training data
+    data = np.load('data/train_X.npy').astype(np.float32)
+    labels = np.load('data/train_y.npy').astype(np.int32)
+    train_data, eval_data, train_labels, eval_labels = train_test_split(
+        data, labels, random_state=0)
 
-def main(unused_argv):
-    # Load training and eval data
-    mnist = tf.contrib.learn.datasets.load_dataset("mnist")
-    train_data = mnist.train.images  # Returns np.array
-    train_labels = np.asarray(mnist.train.labels, dtype=np.int32)
-    eval_data = mnist.test.images  # Returns np.array
-    eval_labels = np.asarray(mnist.test.labels, dtype=np.int32)
-    mnist_classifier = tf.estimator.Estimator(
-        model_fn=cnn_model_fn,
-        model_dir="/tmp/mnist_convnet_model"
-    )
+    classifier = tf.estimator.Estimator(cnn_model_fn)
 
     tensors_to_log = {"probabilities": "softmax_tensor"}
     logging_hook = tf.train.LoggingTensorHook(
@@ -144,7 +130,7 @@ def main(unused_argv):
         shuffle=True
     )
 
-    mnist_classifier.train(
+    classifier.train(
         input_fn=train_input_fn,
         steps=20000,
         hooks=[logging_hook]
@@ -154,11 +140,12 @@ def main(unused_argv):
         x={"x": eval_data},
         y=eval_labels,
         num_epochs=1,
-        shuffle=False)
-
+        shuffle=False
+    )
 
     eval_results = mnist_classifier.evaluate(input_fn=eval_input_fn)
     print(eval_results)
+
 
 if __name__ == '__main__':
     tf.app.run()
