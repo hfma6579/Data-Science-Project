@@ -91,8 +91,8 @@ def train(X, y):
 
 
 def main():
-    INPUT = 'input/input.csv'
-    TEST = 'input/test.csv'
+    INPUT = 'data/input.csv'
+    TEST = 'data/test.csv'
 
     X, y = parse(INPUT)
     classfier = train(X, y)

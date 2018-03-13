@@ -1,4 +1,6 @@
 .*
+*.tar.gz
+data/
 input/
 __pycache__/
 submission.csv
