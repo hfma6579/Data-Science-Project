@@ -5,6 +5,7 @@ An machine learning exercise with TensorFlow
 
 import tensorflow as tf
 import numpy as np
+import pandas as pd
 
 from sklearn.model_selection import train_test_split
 
@@ -132,7 +133,7 @@ def main(argv):
 
     classifier.train(
         input_fn=train_input_fn,
-        steps=100,
+        steps=5000,
         hooks=[logging_hook]
     )
 
@@ -155,9 +156,9 @@ def main(argv):
 
     predictions = classifier.predict(test_input_fn)
     labels = [pred['classes'] for pred in predictions]
-    probs = [pred['probabilities'] for i, pred in enumerate(predictions)]
-    print(labels)
-    print(probs)
+    df = pd.DataFrame({'ImageId': range(1, len(labels)+1), 'Label': labels})
+    df.set_index('ImageId', inplace=True)
+    df.to_csv('submission.csv')
 
 if __name__ == '__main__':
     tf.app.run()
