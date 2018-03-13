@@ -132,7 +132,7 @@ def main(argv):
 
     classifier.train(
         input_fn=train_input_fn,
-        steps=2000,
+        steps=200,
         hooks=[logging_hook]
     )
 
@@ -153,9 +153,11 @@ def main(argv):
         shuffle=False
     )
 
-    predictions = classifier.predict()
-    print(predictions)
-
+    predictions = classifier.predict(test_input_fn)
+    labels = [pred['classes'] for pred in predictions]
+    probs = [pred['probabilities'][labels[i]] for i, pred in enumerate(predictions)]
+    print(labels)
+    print(probs)
 
 if __name__ == '__main__':
     tf.app.run()
