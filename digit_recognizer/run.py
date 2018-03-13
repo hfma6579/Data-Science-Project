@@ -132,7 +132,7 @@ def main(argv):
 
     classifier.train(
         input_fn=train_input_fn,
-        steps=200,
+        steps=100,
         hooks=[logging_hook]
     )
 
@@ -155,7 +155,7 @@ def main(argv):
 
     predictions = classifier.predict(test_input_fn)
     labels = [pred['classes'] for pred in predictions]
-    probs = [pred['probabilities'][labels[i]] for i, pred in enumerate(predictions)]
+    probs = [pred['probabilities'] for i, pred in enumerate(predictions)]
     print(labels)
     print(probs)
 
