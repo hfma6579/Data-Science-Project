@@ -89,6 +89,9 @@ def cnn_model_fn(features, labels, mode, params):
     # Logits Layer
     logits = tf.layers.dense(inputs=dense, units=10)
 
+    if mode == tf.estimator.ModeKeys.PREDICT:
+        return tf.estimator.EstimatorSpec(mode=mode, predictions={"classes": tf.argmax(input=logits, axis=1)})
+
     loss = tf.losses.sparse_softmax_cross_entropy(
         labels=labels,
         logits=logits
@@ -105,7 +108,7 @@ def cnn_model_fn(features, labels, mode, params):
         )
         return tf.estimator.EstimatorSpec(mode=mode, loss=loss, train_op=train_op)
 
-    if mode == tf.estimator.ModeKeys.EVAL:
+    else:
         eval_metric_ops = {
             "accuracy": tf.metrics.accuracy(
                 labels=labels,
@@ -113,9 +116,6 @@ def cnn_model_fn(features, labels, mode, params):
             )
         }
         return tf.estimator.EstimatorSpec(mode=mode, loss=loss, eval_metric_ops=eval_metric_ops)
-
-    else:
-        return tf.estimator.EstimatorSpec(mode=mode, predictions={"classes": tf.argmax(input=logits, axis=1)})
 
 
 def main(argv):
@@ -164,7 +164,7 @@ def main(argv):
         old_eval_result = new_eval_result
         print("Current counter: {}".format(counter))
 
-    test_x = np.load('data/test.npz')
+    test_x = np.load('data/test.npz')['x']
     predictions = classifier.predict(
         input_fn=lambda: predict_input_fn(test_x, BATCH_SIZE))
     labels = [pred['classes'] for pred in predictions]
