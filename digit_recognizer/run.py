@@ -120,7 +120,7 @@ def cnn_model_fn(features, labels, mode, params):
 
 def main(argv):
     # Load training data
-    data = np.load('data/train_test.npz')
+    data = np.load('data/train.npz')
     train_x, eval_x, train_y, eval_y = train_test_split(
         data['x'], data['y'].astype(np.int32), random_state=0)
 
@@ -159,8 +159,9 @@ def main(argv):
 
         print("Accuracy: {}".format(new_eval_result))
         # if there is a improve on the evaluation set, set the counter to 0
-        if new_eval_result > old_eval_result:
+        if new_eval_result - old_eval_result > 1E-5:
             counter = 0
+        print("Current counter: {}".format(counter))
 
     test_x = np.load('data/test.npz')
     predictions = classifier.predict(
