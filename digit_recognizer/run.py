@@ -161,6 +161,7 @@ def main(argv):
         # if there is a improve on the evaluation set, set the counter to 0
         if new_eval_result - old_eval_result > 1E-5:
             counter = 0
+        old_eval_result = new_eval_result
         print("Current counter: {}".format(counter))
 
     test_x = np.load('data/test.npz')
